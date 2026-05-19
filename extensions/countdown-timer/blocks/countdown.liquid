@@ -1,0 +1,177 @@
+{%- comment -%}
+  Countdown Pro — App Block.
+  Drop into any product or page section to show a live countdown.
+  The block is rendered server-side with Liquid for instant first paint
+  (no CLS), then assets/countdown.js takes over to tick the time down.
+
+  Settings let the merchant override timer text/colors per-block, or fall
+  back to the timer config stored in the app database (selected by name).
+{%- endcomment -%}
+
+<div
+  class="cdp-block cdp-block--{{ block.settings.placement_style }}"
+  data-cdp-block
+  data-cdp-timer-name="{{ block.settings.timer_name | escape }}"
+  data-cdp-type="{{ block.settings.timer_type }}"
+  data-cdp-ends-at="{{ block.settings.ends_at }}"
+  data-cdp-duration="{{ block.settings.duration_minutes | times: 60 }}"
+  data-cdp-show-days="{{ block.settings.show_days }}"
+  data-cdp-hide-when-ended="{{ block.settings.hide_when_ended }}"
+  data-cdp-shop="{{ shop.permanent_domain }}"
+  {% if request.page_type == 'product' and product %}data-cdp-product-id="gid://shopify/Product/{{ product.id }}"{% endif %}
+  style="
+    --cdp-bg: {{ block.settings.background_color }};
+    --cdp-fg: {{ block.settings.text_color }};
+    --cdp-accent: {{ block.settings.accent_color }};
+  "
+  {{ block.shopify_attributes }}
+>
+  <div class="cdp-block__inner">
+    {%- if block.settings.headline != blank -%}
+      <div class="cdp-block__headline" data-cdp-headline>{{ block.settings.headline }}</div>
+    {%- endif -%}
+
+    <div class="cdp-block__digits" data-cdp-digits role="timer" aria-live="polite">
+      <div class="cdp-block__segment" data-cdp-days-wrap>
+        <div class="cdp-block__num" data-cdp-days>00</div>
+        <div class="cdp-block__label">{{ 'countdown.days' | t: default: 'Days' }}</div>
+      </div>
+      <div class="cdp-block__segment">
+        <div class="cdp-block__num" data-cdp-hours>00</div>
+        <div class="cdp-block__label">{{ 'countdown.hours' | t: default: 'Hours' }}</div>
+      </div>
+      <div class="cdp-block__segment">
+        <div class="cdp-block__num" data-cdp-minutes>00</div>
+        <div class="cdp-block__label">{{ 'countdown.minutes' | t: default: 'Minutes' }}</div>
+      </div>
+      <div class="cdp-block__segment">
+        <div class="cdp-block__num" data-cdp-seconds>00</div>
+        <div class="cdp-block__label">{{ 'countdown.seconds' | t: default: 'Seconds' }}</div>
+      </div>
+    </div>
+
+    {%- if block.settings.subtext != blank -%}
+      <div class="cdp-block__subtext" data-cdp-subtext>{{ block.settings.subtext }}</div>
+    {%- endif -%}
+
+    <div class="cdp-block__ended" data-cdp-ended hidden>
+      {{ block.settings.ended_text | default: 'This offer has ended' }}
+    </div>
+  </div>
+</div>
+
+{{ 'countdown.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'countdown.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Countdown timer",
+  "target": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Source"
+    },
+    {
+      "type": "text",
+      "id": "timer_name",
+      "label": "Timer name (from app)",
+      "info": "Optional. Match by name to a timer configured in the Countdown Pro admin. Leave blank to use the manual settings below."
+    },
+    {
+      "type": "header",
+      "content": "Manual settings (fallback)"
+    },
+    {
+      "type": "select",
+      "id": "timer_type",
+      "label": "Timer type",
+      "default": "flash_sale",
+      "options": [
+        { "value": "flash_sale", "label": "Flash sale (fixed end date)" },
+        { "value": "evergreen", "label": "Evergreen (per-visitor)" },
+        { "value": "daily", "label": "Daily reset" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "ends_at",
+      "label": "Ends at (ISO 8601, e.g. 2026-06-01T18:00:00Z)",
+      "info": "Used when timer type is Flash sale."
+    },
+    {
+      "type": "number",
+      "id": "duration_minutes",
+      "label": "Duration (minutes)",
+      "default": 60,
+      "info": "Used when timer type is Evergreen or Daily reset."
+    },
+    {
+      "type": "header",
+      "content": "Copy"
+    },
+    {
+      "type": "text",
+      "id": "headline",
+      "label": "Headline",
+      "default": "Hurry! Sale ends in"
+    },
+    {
+      "type": "text",
+      "id": "subtext",
+      "label": "Subtext",
+      "default": "Don't miss out on this deal"
+    },
+    {
+      "type": "text",
+      "id": "ended_text",
+      "label": "Text when expired",
+      "default": "This offer has ended"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#111827"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#F59E0B"
+    },
+    {
+      "type": "select",
+      "id": "placement_style",
+      "label": "Style",
+      "default": "inline",
+      "options": [
+        { "value": "inline", "label": "Inline (boxed)" },
+        { "value": "compact", "label": "Compact" }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_days",
+      "label": "Show days segment",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_when_ended",
+      "label": "Hide timer after it ends",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

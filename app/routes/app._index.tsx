@@ -1,254 +1,181 @@
-import { useEffect } from "react";
-import type {
-  ActionFunctionArgs,
-  HeadersFunction,
-  LoaderFunctionArgs,
-} from "react-router";
-import { useFetcher } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { Form, Link, redirect, useLoaderData, useNavigation } from "react-router";
 import { authenticate } from "../shopify.server";
-import { boundary } from "@shopify/shopify-app-react-router/server";
+import {
+  deleteTimer,
+  listTimersForShop,
+  toggleTimer,
+} from "../lib/timers.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-
-  return null;
+  const { session } = await authenticate.admin(request);
+  const timers = await listTimersForShop(session.shop);
+  return { timers };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
-  ];
-  const response = await admin.graphql(
-    `#graphql
-      mutation populateProduct($product: ProductCreateInput!) {
-        productCreate(product: $product) {
-          product {
-            id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-          }
-        }
-      }`,
-    {
-      variables: {
-        product: {
-          title: `${color} Snowboard`,
-        },
-      },
-    },
-  );
-  const responseJson = await response.json();
+  const { session } = await authenticate.admin(request);
+  const formData = await request.formData();
+  const intent = String(formData.get("intent") ?? "");
+  const id = String(formData.get("id") ?? "");
 
-  const product = responseJson.data!.productCreate!.product!;
-  const variantId = product.variants.edges[0]!.node!.id!;
+  if (!id) {
+    return { ok: false, error: "Missing timer id" };
+  }
 
-  const variantResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
-      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
-        productVariants {
-          id
-          price
-          barcode
-          createdAt
-        }
-      }
-    }`,
-    {
-      variables: {
-        productId: product.id,
-        variants: [{ id: variantId, price: "100.00" }],
-      },
-    },
-  );
+  if (intent === "toggle") {
+    const nextActive = formData.get("active") === "true";
+    await toggleTimer(session.shop, id, nextActive);
+    return redirect("/app");
+  }
 
-  const variantResponseJson = await variantResponse.json();
+  if (intent === "delete") {
+    await deleteTimer(session.shop, id);
+    return redirect("/app");
+  }
 
-  return {
-    product: responseJson!.data!.productCreate!.product,
-    variant:
-      variantResponseJson!.data!.productVariantsBulkUpdate!.productVariants,
-  };
+  return { ok: false, error: "Unknown intent" };
 };
 
-export default function Index() {
-  const fetcher = useFetcher<typeof action>();
+function formatType(type: string): string {
+  switch (type) {
+    case "flash_sale":
+      return "Flash sale";
+    case "evergreen":
+      return "Evergreen";
+    case "daily":
+      return "Daily reset";
+    default:
+      return type;
+  }
+}
 
-  const shopify = useAppBridge();
-  const isLoading =
-    ["loading", "submitting"].includes(fetcher.state) &&
-    fetcher.formMethod === "POST";
+function formatPlacement(placement: string): string {
+  switch (placement) {
+    case "announcement_bar":
+      return "Announcement bar";
+    case "product":
+      return "Product page";
+    case "cart":
+      return "Cart";
+    default:
+      return placement;
+  }
+}
 
-  useEffect(() => {
-    if (fetcher.data?.product?.id) {
-      shopify.toast.show("Product created");
-    }
-  }, [fetcher.data?.product?.id, shopify]);
-
-  const generateProduct = () => fetcher.submit({}, { method: "POST" });
+export default function TimersIndex() {
+  const { timers } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const busy = navigation.state !== "idle";
 
   return (
-    <s-page heading="Shopify app template">
-      <s-button slot="primary-action" onClick={generateProduct}>
-        Generate a product
+    <s-page heading="Countdown Pro">
+      <s-button slot="primary-action" href="/app/timers/new" variant="primary">
+        Create timer
       </s-button>
 
-      <s-section heading="Congrats on creating a new Shopify app 🎉">
-        <s-paragraph>
-          This embedded app template uses{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/tools/app-bridge"
-            target="_blank"
-          >
-            App Bridge
-          </s-link>{" "}
-          interface examples like an{" "}
-          <s-link href="/app/additional">additional page in the app nav</s-link>
-          , as well as an{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            Admin GraphQL
-          </s-link>{" "}
-          mutation demo, to provide a starting point for app development.
-        </s-paragraph>
-      </s-section>
-      <s-section heading="Get started with products">
-        <s-paragraph>
-          Generate a product with GraphQL and get the JSON output for that
-          product. Learn more about the{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreate"
-            target="_blank"
-          >
-            productCreate
-          </s-link>{" "}
-          mutation in our API references.
-        </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-button
-            onClick={generateProduct}
-            {...(isLoading ? { loading: true } : {})}
-          >
-            Generate a product
-          </s-button>
-          {fetcher.data?.product && (
-            <s-button
-              onClick={() => {
-                shopify.intents.invoke?.("edit:shopify/Product", {
-                  value: fetcher.data?.product?.id,
-                });
-              }}
-              target="_blank"
-              variant="tertiary"
-            >
-              Edit product
-            </s-button>
-          )}
-        </s-stack>
-        {fetcher.data?.product && (
-          <s-section heading="productCreate mutation">
-            <s-stack direction="block" gap="base">
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre style={{ margin: 0 }}>
-                  <code>{JSON.stringify(fetcher.data.product, null, 2)}</code>
-                </pre>
-              </s-box>
-
-              <s-heading>productVariantsBulkUpdate mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre style={{ margin: 0 }}>
-                  <code>{JSON.stringify(fetcher.data.variant, null, 2)}</code>
-                </pre>
-              </s-box>
+      <s-section heading="Your countdown timers">
+        {timers.length === 0 ? (
+          <s-stack direction="block" gap="base">
+            <s-paragraph>
+              You haven&apos;t created any timers yet. Countdown timers create urgency
+              and have been shown to increase conversion rates on product pages.
+            </s-paragraph>
+            <s-stack direction="inline" gap="base">
+              <s-button href="/app/timers/new" variant="primary">
+                Create your first timer
+              </s-button>
             </s-stack>
-          </s-section>
+          </s-stack>
+        ) : (
+          <s-stack direction="block" gap="base">
+            {timers.map((timer) => (
+              <s-box
+                key={timer.id}
+                padding="base"
+                borderWidth="base"
+                borderRadius="base"
+                background="subdued"
+              >
+                <s-stack direction="block" gap="small-200">
+                  <s-stack direction="inline" gap="base">
+                    <s-heading>{timer.name}</s-heading>
+                    <s-badge tone={timer.active ? "success" : "neutral"}>
+                      {timer.active ? "Active" : "Paused"}
+                    </s-badge>
+                    <s-badge>{formatType(timer.type)}</s-badge>
+                    <s-badge>{formatPlacement(timer.placement)}</s-badge>
+                  </s-stack>
+
+                  <s-paragraph>
+                    {timer.type === "flash_sale" && timer.endsAt
+                      ? `Ends ${new Date(timer.endsAt).toLocaleString()}`
+                      : null}
+                    {timer.type === "evergreen" && timer.durationSeconds
+                      ? `Per-visitor duration: ${Math.round(timer.durationSeconds / 60)} minutes`
+                      : null}
+                    {timer.type === "daily" && timer.durationSeconds
+                      ? `Daily duration: ${Math.round(timer.durationSeconds / 60)} minutes`
+                      : null}
+                  </s-paragraph>
+
+                  <s-stack direction="inline" gap="small-200">
+                    <Link to={`/app/timers/${timer.id}`}>
+                      <s-button>Edit</s-button>
+                    </Link>
+                    <Form method="post" replace>
+                      <input type="hidden" name="intent" value="toggle" />
+                      <input type="hidden" name="id" value={timer.id} />
+                      <input
+                        type="hidden"
+                        name="active"
+                        value={timer.active ? "false" : "true"}
+                      />
+                      <s-button
+                        type="submit"
+                        {...(busy ? { loading: true } : {})}
+                      >
+                        {timer.active ? "Pause" : "Resume"}
+                      </s-button>
+                    </Form>
+                    <Form
+                      method="post"
+                      replace
+                      onSubmit={(event) => {
+                        // eslint-disable-next-line no-undef, no-alert
+                        if (!confirm(`Delete timer "${timer.name}"?`)) {
+                          event.preventDefault();
+                        }
+                      }}
+                    >
+                      <input type="hidden" name="intent" value="delete" />
+                      <input type="hidden" name="id" value={timer.id} />
+                      <s-button type="submit" tone="critical">
+                        Delete
+                      </s-button>
+                    </Form>
+                  </s-stack>
+                </s-stack>
+              </s-box>
+            ))}
+          </s-stack>
         )}
       </s-section>
 
-      <s-section slot="aside" heading="App template specs">
+      <s-section slot="aside" heading="Get started">
         <s-paragraph>
-          <s-text>Framework: </s-text>
-          <s-link href="https://reactrouter.com/" target="_blank">
-            React Router
-          </s-link>
+          1. Create a timer above.
         </s-paragraph>
         <s-paragraph>
-          <s-text>Interface: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/app-home/using-polaris-components"
-            target="_blank"
-          >
-            Polaris web components
-          </s-link>
+          2. In your Shopify admin, open <strong>Online Store → Themes →
+          Customize</strong>, then add the <strong>Countdown</strong> app block
+          to any product page, or enable the <strong>Countdown bar</strong> app
+          embed to show a site-wide countdown.
         </s-paragraph>
         <s-paragraph>
-          <s-text>API: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            GraphQL
-          </s-link>
+          3. Done — your storefront will now display the live timer.
         </s-paragraph>
-        <s-paragraph>
-          <s-text>Database: </s-text>
-          <s-link href="https://www.prisma.io/" target="_blank">
-            Prisma
-          </s-link>
-        </s-paragraph>
-      </s-section>
-
-      <s-section slot="aside" heading="Next steps">
-        <s-unordered-list>
-          <s-list-item>
-            Build an{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/getting-started/build-app-example"
-              target="_blank"
-            >
-              example app
-            </s-link>
-          </s-list-item>
-          <s-list-item>
-            Explore Shopify&apos;s API with{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
-              target="_blank"
-            >
-              GraphiQL
-            </s-link>
-          </s-list-item>
-        </s-unordered-list>
       </s-section>
     </s-page>
   );
 }
-
-export const headers: HeadersFunction = (headersArgs) => {
-  return boundary.headers(headersArgs);
-};

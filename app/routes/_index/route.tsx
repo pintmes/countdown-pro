@@ -21,9 +21,11 @@ export default function App() {
   return (
     <div className={styles.index}>
       <div className={styles.content}>
-        <h1 className={styles.heading}>A short heading about [your app]</h1>
+        <h1 className={styles.heading}>Countdown Pro</h1>
         <p className={styles.text}>
-          A tagline about [your app] that describes your value proposition.
+          Boost conversions with beautiful countdown timers — flash sales,
+          evergreen urgency, and daily resets — that drop into any Shopify theme
+          with one click.
         </p>
         {showForm && (
           <Form className={styles.form} method="post" action="/auth/login">
@@ -39,16 +41,16 @@ export default function App() {
         )}
         <ul className={styles.list}>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Three timer modes</strong>. Flash sale, evergreen, and
+            daily-reset — pick the urgency that fits your store.
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>One-click theme install</strong>. App blocks for product
+            pages and app embeds for site-wide announcement bars. No code.
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Pixel-perfect customization</strong>. Headline, subtext,
+            colors, days/hours/minutes/seconds segments — fully tunable.
           </li>
         </ul>
       </div>
