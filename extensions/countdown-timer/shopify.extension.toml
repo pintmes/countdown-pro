@@ -1,0 +1,10 @@
+name = "Countdown Pro"
+type = "theme"
+
+# Theme app extension for Countdown Pro.
+# Exposes two surfaces to the merchant in the theme editor:
+#   1. blocks/countdown.liquid    — App block (drop into any product section)
+#   2. blocks/announcement.liquid — App embed (sitewide announcement bar)
+#
+# Both blocks load assets/countdown.js which renders the live countdown using
+# data fetched from /api/timers on the app's domain.

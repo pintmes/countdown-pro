@@ -1,0 +1,136 @@
+{%- comment -%}
+  Countdown Pro — App Embed (sitewide announcement bar).
+  This block is enabled from the theme editor's "App embeds" panel and
+  appears site-wide above the header. Same JS/CSS as the inline block.
+{%- endcomment -%}
+
+{% if block.settings.enabled %}
+  <div
+    class="cdp-bar"
+    data-cdp-block
+    data-cdp-bar
+    data-cdp-timer-name="{{ block.settings.timer_name | escape }}"
+    data-cdp-type="{{ block.settings.timer_type }}"
+    data-cdp-ends-at="{{ block.settings.ends_at }}"
+    data-cdp-duration="{{ block.settings.duration_minutes | times: 60 }}"
+    data-cdp-show-days="{{ block.settings.show_days }}"
+    data-cdp-hide-when-ended="{{ block.settings.hide_when_ended }}"
+    data-cdp-shop="{{ shop.permanent_domain }}"
+    style="
+      --cdp-bg: {{ block.settings.background_color }};
+      --cdp-fg: {{ block.settings.text_color }};
+      --cdp-accent: {{ block.settings.accent_color }};
+    "
+  >
+    <div class="cdp-bar__inner">
+      {%- if block.settings.headline != blank -%}
+        <span class="cdp-bar__headline" data-cdp-headline>{{ block.settings.headline }}</span>
+      {%- endif -%}
+      <span class="cdp-bar__digits" data-cdp-digits role="timer" aria-live="polite">
+        <span data-cdp-days-wrap><b data-cdp-days>00</b>d </span>
+        <b data-cdp-hours>00</b>h
+        <b data-cdp-minutes>00</b>m
+        <b data-cdp-seconds>00</b>s
+      </span>
+      {%- if block.settings.subtext != blank -%}
+        <span class="cdp-bar__subtext" data-cdp-subtext>{{ block.settings.subtext }}</span>
+      {%- endif -%}
+      <span class="cdp-bar__ended" data-cdp-ended hidden>
+        {{ block.settings.ended_text | default: 'This offer has ended' }}
+      </span>
+    </div>
+  </div>
+
+  {{ 'countdown.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'countdown.js' | asset_url }}" defer></script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Countdown bar",
+  "target": "head",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enabled",
+      "label": "Show announcement bar",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "timer_name",
+      "label": "Timer name (from app)",
+      "info": "Optional. Match a timer from Countdown Pro admin by name."
+    },
+    {
+      "type": "select",
+      "id": "timer_type",
+      "label": "Timer type",
+      "default": "flash_sale",
+      "options": [
+        { "value": "flash_sale", "label": "Flash sale" },
+        { "value": "evergreen", "label": "Evergreen" },
+        { "value": "daily", "label": "Daily reset" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "ends_at",
+      "label": "Ends at (ISO 8601)"
+    },
+    {
+      "type": "number",
+      "id": "duration_minutes",
+      "label": "Duration (minutes)",
+      "default": 60
+    },
+    {
+      "type": "text",
+      "id": "headline",
+      "label": "Headline",
+      "default": "Hurry! Sale ends in"
+    },
+    {
+      "type": "text",
+      "id": "subtext",
+      "label": "Subtext"
+    },
+    {
+      "type": "text",
+      "id": "ended_text",
+      "label": "Text when expired",
+      "default": "This offer has ended"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#111827"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#F59E0B"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_days",
+      "label": "Show days segment",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_when_ended",
+      "label": "Hide timer after it ends",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

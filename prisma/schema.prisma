@@ -31,3 +31,33 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+// A countdown timer configured by a merchant.
+// `type` controls how the end time is computed at render time:
+//   - "flash_sale": fixed deadline (endsAt)
+//   - "evergreen":  per-visitor durationSeconds countdown, persisted via cookie
+//   - "daily":      resets at midnight in the shop's timezone
+model Timer {
+  id              String   @id @default(cuid())
+  shop            String
+  name            String
+  type            String   @default("flash_sale")
+  endsAt          DateTime?
+  durationSeconds Int?
+  placement       String   @default("announcement_bar")
+  targetType      String   @default("all")
+  targetIds       String   @default("[]")
+  headline        String   @default("Hurry! Sale ends in")
+  subtext         String   @default("Don't miss out on this deal")
+  endedText       String   @default("This offer has ended")
+  backgroundColor String   @default("#111827")
+  textColor       String   @default("#FFFFFF")
+  accentColor     String   @default("#F59E0B")
+  showDays        Boolean  @default(true)
+  hideWhenEnded   Boolean  @default(false)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([shop, active])
+}

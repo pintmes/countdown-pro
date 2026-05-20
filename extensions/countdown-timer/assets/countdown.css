@@ -1,0 +1,118 @@
+/* Countdown Pro — storefront styles.
+   Scoped under .cdp-* to avoid colliding with theme CSS. */
+
+.cdp-block {
+  background: var(--cdp-bg, #111827);
+  color: var(--cdp-fg, #ffffff);
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  font-family: inherit;
+}
+
+.cdp-block__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.cdp-block__headline {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.cdp-block__digits {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cdp-block__segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.cdp-block__num {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cdp-accent, #f59e0b);
+  line-height: 1;
+}
+
+.cdp-block__label {
+  font-size: 11px;
+  margin-top: 4px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cdp-block__subtext {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.cdp-block__ended {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cdp-block--compact .cdp-block__segment {
+  min-width: 0;
+  padding: 4px 8px;
+  background: transparent;
+}
+
+.cdp-block--compact .cdp-block__num {
+  font-size: 20px;
+}
+
+/* Announcement bar variant */
+.cdp-bar {
+  width: 100%;
+  background: var(--cdp-bg, #111827);
+  color: var(--cdp-fg, #ffffff);
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.cdp-bar__inner {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.cdp-bar__digits {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--cdp-accent, #f59e0b);
+}
+
+.cdp-bar__digits b {
+  font-weight: 800;
+}
+
+.cdp-bar__headline,
+.cdp-bar__subtext {
+  font-weight: 500;
+}
+
+.cdp-bar__ended {
+  font-weight: 600;
+}
+
+[data-cdp-ended][hidden] {
+  display: none !important;
+}

@@ -1,5 +1,6 @@
 {
-  "name": "app",
+  "name": "countdown-pro",
+  "description": "Shopify countdown timer & urgency app — boost conversions with flash-sale, evergreen, and daily-recurring timers.",
   "private": true,
   "scripts": {
     "build": "react-router build",
